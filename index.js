@@ -88,7 +88,9 @@ try {
       await bot.client.chat.postMessage({
         token: context.botToken,
         channel: event.channel,
-        text: responseText
+        text: responseText,
+        unfurl_links: false,
+        unfurl_media: false
       });
     }
   }
