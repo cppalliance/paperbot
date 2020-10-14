@@ -128,9 +128,9 @@ try {
 }
 });
 
-bot.message(/\[((P|N)([R0-9])*)\]/, async ({ context, say }) => {
+bot.message(/\[([PpNn]([R0-9])*)\]/, async ({ context, say }) => {
   try {
-    let paperId = context.matches[1];
+    let paperId = context.matches[1].toUpperCase();
 
     if (paperId.startsWith('P') && paperId.length === 5) {
       paperId = findLatestRevision(paperId);
