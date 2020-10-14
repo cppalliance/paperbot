@@ -91,33 +91,38 @@ try {
         text: responseText
       });
     }
-  } else if (command.startsWith('[') && command.endsWith(']')) {
-    let paperId = command.slice(1, -1);
-
-    if (paperId.startsWith('P') && paperId.length === 5) {
-      paperId = findLatestRevision(paperId);
-    }
-
-    if (paperId === undefined || paperData[paperId] === undefined) {
-      await bot.client.chat.postMessage({
-        token: context.botToken,
-        channel: event.channel,
-        text: "Sorry, I could not find that paper."
-      });
-    } else {
-      await bot.client.chat.postMessage({
-        token: context.botToken,
-        channel: event.channel,
-        text: makePaperMessage(paperId)
-      });
-    }
-  } else {
-    await bot.client.chat.postMessage({
-      token: context.botToken,
-      channel: event.channel,
-      text: "Sorry, I didn't understand that."
-    });
   }
+  // Let the bot.message(...) handle all [Pxxxx] queries.
+
+  // else if (command.startsWith('[') && command.endsWith(']')) {
+  //   let paperId = command.slice(1, -1);
+
+  //   if (paperId.startsWith('P') && paperId.length === 5) {
+  //     paperId = findLatestRevision(paperId);
+  //   }
+
+  //   if (paperId === undefined || paperData[paperId] === undefined) {
+  //     await bot.client.chat.postMessage({
+  //       token: context.botToken,
+  //       channel: event.channel,
+  //       text: "Sorry, I could not find that paper."
+  //     });
+  //   } else {
+  //     await bot.client.chat.postMessage({
+  //       token: context.botToken,
+  //       channel: event.channel,
+  //       text: makePaperMessage(paperId),
+  //       unfurl_links: false,
+  //       unfurl_media: false
+  //     });
+  //   }
+  // } else {
+  //   await bot.client.chat.postMessage({
+  //     token: context.botToken,
+  //     channel: event.channel,
+  //     text: "Sorry, I didn't understand that."
+  //   });
+  // }
 } catch (e) {
   console.log('Error occurred:', e);
 }
