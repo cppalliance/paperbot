@@ -135,7 +135,12 @@ bot.message(/\[((P|N)([R0-9])*)\]/, async ({ context, say }) => {
       // await say("Sorry, I could not find that paper.");
       // or we can fail silently...
     } else {
-      await say(makePaperMessage(paperId));
+      // await say(makePaperMessage(paperId));
+      await say({
+        text: makePaperMessage(paperId),
+        unfurl_links: false,
+        unfurl_media: false
+      });
     }
   } catch (e) {
     console.log('Error occurred:', e);
