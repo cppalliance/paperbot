@@ -121,7 +121,8 @@ app.message(/.*/, async ({ context, event, say }) => {
         await say({
           text: search(words.slice(1).join(' ')),
           unfurl_links: false,
-          unfurl_media: false
+          unfurl_media: false,
+          thread_ts: event.thread_ts
         });
         return;
       }
@@ -131,7 +132,8 @@ app.message(/.*/, async ({ context, event, say }) => {
         await say({
           text: findPaper(words[0].slice(1, -1)),
           unfurl_links: false,
-          unfurl_media: false
+          unfurl_media: false,
+          thread_ts: event.thread_ts
         });
         return;
       }
@@ -141,7 +143,8 @@ app.message(/.*/, async ({ context, event, say }) => {
         await say({
           text: findPaper(words[0]),
           unfurl_links: false,
-          unfurl_media: false
+          unfurl_media: false,
+          thread_ts: event.thread_ts
         });
         return;
       }
@@ -151,7 +154,8 @@ app.message(/.*/, async ({ context, event, say }) => {
         await say({
           text: findPaper(paperId.slice(1, -1)),
           unfurl_links: false,
-          unfurl_media: false
+          unfurl_media: false,
+          thread_ts: event.thread_ts
         });
       }
     }
