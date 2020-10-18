@@ -76,6 +76,7 @@ const findLatestRevision = (paperId) => {
 const makePaperMessage = (paperId) => {
   const paper = paperData[paperId];
   const subgroup = (paper.subgroup === undefined || paper.subgroup === '') ? '' : ` [${paper.subgroup}]`;
+  const title = paper.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const author = paper.author === undefined ? '' : ` (by ${paper.author})`;
   const date = paper.date === undefined ? '' : ` (${paper.date})`;
   const issues = paper.issues === undefined ? [] : paper.issues.map(issue => `<https://wg21.link/${issue.toLowerCase()}|${issue}>`)
@@ -83,7 +84,7 @@ const makePaperMessage = (paperId) => {
     issues.push(`<${paper.github_url}|GitHub issue>`);
   }
   const allIssues = issues.length === 0 ? '' : ` (Related: ${issues.join(', ')})`;
-  return `<${paper.link}|${paperId}:${subgroup} ${paper.title}>${author}${date}${allIssues}`;
+  return `<${paper.link}|${paperId}:${subgroup} ${title}>${author}${date}${allIssues}`;
 };
 
 const search = ({ query, type }) => {
