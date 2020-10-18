@@ -156,8 +156,17 @@ app.message(/.*/, async ({ context, event, say }) => {
     }
     if (mentioned || event.channel_type === 'im') {
       if (words[0] === 'search') {
+        let text = '';
+        if (words[1] === 'papers') {
+          text = search({ query: words.slice(2).join(' '), type: "paper" });
+        } else if (words[1] === 'issues') {
+          text = search({ query: words.slice(2).join(' '), type: "issue" });
+        } else {
+          text = search({ query: words.slice(1).join(' ') });
+        }
+
         await say({
-          text: search({ query: words.slice(1).join(' ') }),
+          text: text,
           unfurl_links: false,
           unfurl_media: false,
           thread_ts: event.thread_ts
