@@ -4,6 +4,16 @@ const { App } = require('@slack/bolt');
 const FlexSearch = require("flexsearch");
 
 let paperData = JSON.parse(fs.readFileSync('index.json'));
+
+// 1. We need to convert the JSON object into an array so that FlexSearch can
+// swallow it.
+// 2. Since field search in FlexSearch is sensitive to field reordering
+// (https://github.com/nextapps-de/flexsearch/issues/70), we will merge all the
+// data we intend to search on (paperId, title, author, date) into one string
+// and put it at the top in the 'index' definition.
+// 3. We still want the 'type' field because we can filter results with it.
+// We still want the 'date' field because we sort the results with it.
+// 'paperId' is necessary because FlexSearch index needs an 'id'.
 const adjustedPaperData = Object.keys(paperData).map(paperId => {
   const paper = paperData[paperId];
   return {
@@ -87,6 +97,8 @@ const makePaperMessage = (paperId) => {
   return `<${paper.link}|${paperId}:${subgroup} ${title}>${author}${date}${allIssues}`;
 };
 
+// We avoid passing { limit: 30 } to FlexSearch because it discards relevant results
+// for some reason.
 const search = ({ query, type }) => {
   let searchResults = [];
   if (type === undefined) {
