@@ -1,5 +1,5 @@
-const fs = require('fs');
 require('dotenv').config();
+const fs = require('fs');
 const { App } = require('@slack/bolt');
 const FlexSearch = require("flexsearch");
 
