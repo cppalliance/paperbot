@@ -1,8 +1,45 @@
 const fs = require('fs');
 require('dotenv').config();
 const { App } = require('@slack/bolt');
+const FlexSearch = require("flexsearch");
 
 let paperData = JSON.parse(fs.readFileSync('index.json'))
+const adjustedPaperData = Object.keys(paperData).map(paperId => {
+  const paper = paperData[paperId];
+  return {
+    data: [paperId, paper.title, paper.author, paper.date].join(' '),
+    paperId: paperId,
+    type: paper.type,
+    date: paper.date
+  };
+});
+
+const index = new FlexSearch({
+  tokenize: "strict",
+  depth: 1,
+  doc: {
+    id: "paperId",
+    field: {
+      data: {},
+      paperId: {
+        tokenize: "forward"
+      },
+      type: {},
+      date: {}
+    }
+  }
+});
+index.add(adjustedPaperData);
+
+const latestFirst = (x, y) => {
+  if (x.date === undefined) return 1;
+  if (y.date === undefined) return -1;
+  const [xyear, xmonth, xday] = x.date.split('-').map(str => parseInt(str, 10));
+  const [yyear, ymonth, yday] = y.date.split('-').map(str => parseInt(str, 10));
+  if (xyear !== yyear) return yyear < xyear ? -1 : 1;
+  if (xmonth !== ymonth) return ymonth < xmonth ? -1 : 1;
+  return yday < xday ? -1 : 1;
+};
 
 const findPaper = (paperId) => {
   paperId = paperId.toUpperCase();
@@ -49,42 +86,31 @@ const makePaperMessage = (paperId) => {
   return `<${paper.link}|${paperId}:${subgroup} ${paper.title}>${author}${date}${allIssues}`;
 };
 
-const search = (query) => {
-  const keywords = query.split(' ').map(word => word.toLowerCase());
+const search = ({ query, type }) => {
   let searchResults = [];
-  for (let paperId in paperData) {
-    let titleOccurrences = 0;
-    let authorOccurrences = 0;
-    titleOccurrences = paperData[paperId].title.toLowerCase().split(' ').filter(word => keywords.includes(word)).length;
-    if (paperData[paperId].author !== undefined) {
-      authorOccurrences = paperData[paperId].author.toLowerCase().split(' ').filter(word => keywords.includes(word)).length;
-    }
-    const totalOccurrences = titleOccurrences + authorOccurrences;
-    if (totalOccurrences > 0) {
-      searchResults.push({ occurrences: totalOccurrences, paperId: paperId });
-    }
+  if (type === undefined) {
+    searchResults = index.search({
+      query: query,
+      sort: latestFirst,
+      limit: 30
+    });
+  } else {
+    searchResults = index.search({
+      query: query,
+      where: { type: type },
+      sort: latestFirst,
+      limit: 30
+    });
   }
   if (searchResults.length === 0) {
     return 'No results.';
-  } else {
-    searchResults.sort((x, y) => y.occurrences < x.occurrences ? -1 : 1);
-    searchResults = searchResults.slice(0, 30);
-    let topResults = searchResults.slice(0, 15);
-    topResults.sort((x, y) => {
-      if (paperData[x.paperId].date === undefined) return 1;
-      if (paperData[y.paperId].date === undefined) return -1;
-      const [xyear, xmonth, xday] = paperData[x.paperId].date.split('-').map(str => parseInt(str));
-      const [yyear, ymonth, yday] = paperData[y.paperId].date.split('-').map(str => parseInt(str));
-      if (xyear !== yyear) return yyear < xyear ? -1 : 1;
-      if (xmonth !== ymonth) return ymonth < xmonth ? -1 : 1;
-      return yday < xday ? -1 : 1;
-    });
-    const responseText = topResults.map(result => result.paperId)
-      .map(makePaperMessage)
-      .join('\n') + (searchResults.length <= 15 ? ''
-        : ('\nAlso: ' + searchResults.slice(15).map(result => `<${paperData[result.paperId].link}|${result.paperId}>`).join(', ')))
-    return responseText;
   }
+  const topResults = searchResults.slice(0, 15);
+  const responseText = topResults.map(result => result.paperId)
+    .map(makePaperMessage)
+    .join('\n') + (searchResults.length <= 15 ? ''
+      : ('\nAlso: ' + searchResults.slice(15).map(result => `<${paperData[result.paperId].link}|${result.paperId}>`).join(', ')));
+  return responseText;
 };
 
 const matchPaper = (text) => {
@@ -119,7 +145,7 @@ app.message(/.*/, async ({ context, event, say }) => {
     if (mentioned || event.channel_type === 'im') {
       if (words[0] === 'search') {
         await say({
-          text: search(words.slice(1).join(' ')),
+          text: search({ query: words.slice(1).join(' ') }),
           unfurl_links: false,
           unfurl_media: false,
           thread_ts: event.thread_ts
