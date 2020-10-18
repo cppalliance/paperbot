@@ -91,20 +91,19 @@ const search = ({ query, type }) => {
   if (type === undefined) {
     searchResults = index.search({
       query: query,
-      sort: latestFirst,
-      limit: 30
+      sort: latestFirst
     });
   } else {
     searchResults = index.search({
       query: query,
       where: { type: type },
-      sort: latestFirst,
-      limit: 30
+      sort: latestFirst
     });
   }
   if (searchResults.length === 0) {
     return 'No results.';
   }
+  searchResults = searchResults.slice(0, 30);
   const topResults = searchResults.slice(0, 15);
   const responseText = topResults.map(result => result.paperId)
     .map(makePaperMessage)
