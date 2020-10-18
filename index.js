@@ -3,7 +3,7 @@ const fs = require('fs');
 const { App } = require('@slack/bolt');
 const FlexSearch = require("flexsearch");
 
-let paperData = JSON.parse(fs.readFileSync('index.json'))
+let paperData = JSON.parse(fs.readFileSync('index.json'));
 const adjustedPaperData = Object.keys(paperData).map(paperId => {
   const paper = paperData[paperId];
   return {
