@@ -165,6 +165,17 @@ app.message(/.*/, async ({ context, event, say }) => {
         return;
       }
 
+      if (words[0] === 'help') {
+        await say({
+          text: 'Usage: "@npaperbot search [papers|issues|everything]: <keywords>"'
+                 + ' or "@npaperbot {Nxxxx|Pxxxx|PxxxxRx|Dxxxx|DxxxxRx|CWGxxx|EWGxxx|LWGxxx|LEWGxxx|FSxxx}..."',
+          unfurl_links: false,
+          unfurl_media: false,
+          thread_ts: event.thread_ts
+        });
+        return;
+      }
+
       let paperId = matchPaperInSquareBrackets(words[0]);
       if (paperId !== undefined) {
         await say({
