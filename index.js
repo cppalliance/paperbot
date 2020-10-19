@@ -1,6 +1,6 @@
 require('dotenv').config();
 const fs = require('fs');
-const { App } = require('@slack/bolt');
+const { App, ExpressReceiver } = require('@slack/bolt');
 const FlexSearch = require("flexsearch");
 
 let paperData = JSON.parse(fs.readFileSync('index.json'));
@@ -135,9 +135,18 @@ const matchPaperInSquareBrackets = (text) => {
   return result === null ? undefined : result[0];
 };
 
+const receiver = new ExpressReceiver({
+  signingSecret: process.env.SLACK_SIGNING_SECRET
+});
+
 const app = new App({
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
-  token: process.env.SLACK_BOT_TOKEN
+  token: process.env.SLACK_BOT_TOKEN,
+  receiver: receiver
+});
+
+// health check
+receiver.app.get('/health', (_, res) => {
+  res.status(200).send("app is running");
 });
 
 const botMentioned = (messageText, botUserId) => {
