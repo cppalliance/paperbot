@@ -2,44 +2,80 @@ require('dotenv').config();
 const fs = require('fs');
 const { App, ExpressReceiver } = require('@slack/bolt');
 const FlexSearch = require("flexsearch");
+const axios = require('axios');
 
-let paperData = JSON.parse(fs.readFileSync('index.json'));
+let paperData = undefined;
+let index = undefined;
 
-// 1. We need to convert the JSON object into an array so that FlexSearch can
-// swallow it.
-// 2. Since field search in FlexSearch is sensitive to field reordering
-// (https://github.com/nextapps-de/flexsearch/issues/70), we will merge all the
-// data we intend to search on (paperId, title, author, date) into one string
-// and put it at the top in the 'index' definition.
-// 3. We still want the 'type' field because we can filter results with it.
-// We still want the 'date' field because we sort the results with it.
-// 'paperId' is necessary because FlexSearch index needs an 'id'.
-const adjustedPaperData = Object.keys(paperData).map(paperId => {
-  const paper = paperData[paperId];
-  return {
-    data: [paperId, paper.title, paper.author, paper.date].join(' '),
-    paperId: paperId,
-    type: paper.type,
-    date: paper.date
-  };
-});
-
-const index = new FlexSearch({
-  tokenize: "strict",
-  depth: 1,
-  doc: {
-    id: "paperId",
-    field: {
-      data: {},
-      paperId: {
-        tokenize: "forward"
-      },
-      type: {},
-      date: {}
-    }
+const updatePaperData = async () => {
+  const response = await axios.get('http://wg21.link/index.json');
+  if (typeof response.data === 'object') {
+    paperData = response.data;
   }
-});
-index.add(adjustedPaperData);
+};
+
+const updateIndex = () => {
+  // 1. We need to convert the JSON object into an array so that FlexSearch can
+  // swallow it.
+  // 2. Since field search in FlexSearch is sensitive to field reordering
+  // (https://github.com/nextapps-de/flexsearch/issues/70), we will merge all the
+  // data we intend to search on (paperId, title, author, date) into one string
+  // and put it at the top in the 'index' definition.
+  // 3. We still want the 'type' field because we can filter results with it.
+  // We still want the 'date' field because we sort the results with it.
+  // 'paperId' is necessary because FlexSearch index needs an 'id'.
+  const adjustedPaperData = Object.keys(paperData).map(paperId => {
+    const paper = paperData[paperId];
+    return {
+      data: [paperId, paper.title, paper.author, paper.date].join(' '),
+      paperId: paperId,
+      type: paper.type,
+      date: paper.date
+    };
+  });
+
+  index = new FlexSearch({
+    tokenize: "strict",
+    depth: 1,
+    doc: {
+      id: "paperId",
+      field: {
+        data: {},
+        paperId: {
+          tokenize: "forward"
+        },
+        type: {},
+        date: {}
+      }
+    }
+  });
+  index.add(adjustedPaperData);
+};
+
+(async () => {
+  try {
+    await updatePaperData();
+    console.log('Fetched index.json successfully!');
+  } catch (e) {
+    console.log('Fetching index.json failed', e);
+  }
+
+  if (paperData === undefined) {
+    paperData = fs.readFileSync('index.json');
+  }
+
+  updateIndex();
+})();
+
+setInterval(async () => {
+  try {
+    await updatePaperData();
+    console.log('Fetched index.json successfully!');
+    updateIndex();
+  } catch (e) {
+    console.log('Fetching index.json failed:', e);
+  }
+}, 24*60*60*1000);
 
 const latestFirst = (x, y) => {
   if (x.date === undefined) return 1;
