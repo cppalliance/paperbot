@@ -126,12 +126,12 @@ const search = ({ query, type }) => {
 };
 
 const matchPaper = (text) => {
-  const result = text.match(/(N\d{4}|[PD]\d{4}(R\d)?|(CWG|EWG|LWG|LEWG|FS)\d{1,3})/i);
+  const result = text.match(/(N\d{4}|[PD]\d{4}(R\d)?|(CWG|EWG|LWG|LEWG|FS)\d{1,4})/i);
   return result === null ? undefined : result[0];
 };
 
 const matchPaperInSquareBrackets = (text) => {
-  const result = text.match(/\[(N\d{4}|[PD]\d{4}(R\d)?|(CWG|EWG|LWG|LEWG|FS)\d{1,3})\]/i);
+  const result = text.match(/\[(N\d{4}|[PD]\d{4}(R\d)?|(CWG|EWG|LWG|LEWG|FS)\d{1,4})\]/i);
   return result === null ? undefined : result[0];
 };
 
