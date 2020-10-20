@@ -89,12 +89,12 @@ const makePaperMessage = (paperId) => {
   const title = paper.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const author = paper.author === undefined ? '' : ` (by ${paper.author})`;
   const date = paper.date === undefined ? '' : ` (${paper.date})`;
-  const issues = paper.issues === undefined ? [] : paper.issues.map(issue => `<https://wg21.link/${issue.toLowerCase()}|${issue}>`)
+  const issues = paper.issues === undefined ? [] : paper.issues.map(issue => `<${paperData[issue].long_link}|${issue}>`)
   if (paper.github_url !== undefined) {
     issues.push(`<${paper.github_url}|GitHub issue>`);
   }
   const allIssues = issues.length === 0 ? '' : ` (Related: ${issues.join(', ')})`;
-  return `<${paper.link}|${paperId}:${subgroup} ${title}>${author}${date}${allIssues}`;
+  return `<${paper.long_link}|${paperId}:${subgroup} ${title}>${author}${date}${allIssues}`;
 };
 
 // We avoid passing { limit: 30 } to FlexSearch because it discards relevant results
@@ -121,7 +121,7 @@ const search = ({ query, type }) => {
   const responseText = topResults.map(result => result.paperId)
     .map(makePaperMessage)
     .join('\n') + (searchResults.length <= 15 ? ''
-      : ('\nAlso: ' + searchResults.slice(15).map(result => `<${paperData[result.paperId].link}|${result.paperId}>`).join(', ')));
+      : ('\nAlso: ' + searchResults.slice(15).map(result => `<${paperData[result.paperId].long_link}|${result.paperId}>`).join(', ')));
   return responseText;
 };
 
