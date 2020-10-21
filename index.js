@@ -52,19 +52,19 @@ const updateIndex = () => {
   index.add(adjustedPaperData);
 };
 
+// Load the local file right away for fast searches.
+paperData = JSON.parse(fs.readFileSync('index.json'));
+updateIndex();
+
+// Then download the latest web file.
 (async () => {
   try {
     await updatePaperData();
     console.log('Fetched index.json successfully!');
+    updateIndex();
   } catch (e) {
     console.log('Fetching index.json failed', e);
   }
-
-  if (paperData === undefined) {
-    paperData = fs.readFileSync('index.json');
-  }
-
-  updateIndex();
 })();
 
 setInterval(async () => {
