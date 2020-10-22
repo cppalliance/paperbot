@@ -27,7 +27,7 @@ const loadCache = () => {
 };
 
 const downloadIndex = async () => {
-  const response = await axios.get('http://wg21.link/index.json');
+  const response = await axios.get('https://wg21.link/index.json');
   if (typeof response.data === 'object') {
     return response.data;
   } else {
@@ -91,7 +91,10 @@ const initializeIndex = async () => {
     return;
   }
 
-  console.log('Failed to initialize the index!');
+  console.log('Loading index.json from local file.');
+  paperData = JSON.parse(fs.readFileSync('index.json'));
+  updateSearchIndex();
+
 };
 
 setInterval(async () => {
