@@ -2,44 +2,109 @@ require('dotenv').config();
 const fs = require('fs');
 const { App, ExpressReceiver } = require('@slack/bolt');
 const FlexSearch = require("flexsearch");
+const axios = require('axios');
 
-let paperData = JSON.parse(fs.readFileSync('index.json'));
+let paperData = undefined;
+let searchIndex = undefined;
 
-// 1. We need to convert the JSON object into an array so that FlexSearch can
-// swallow it.
-// 2. Since field search in FlexSearch is sensitive to field reordering
-// (https://github.com/nextapps-de/flexsearch/issues/70), we will merge all the
-// data we intend to search on (paperId, title, author, date) into one string
-// and put it at the top in the 'index' definition.
-// 3. We still want the 'type' field because we can filter results with it.
-// We still want the 'date' field because we sort the results with it.
-// 'paperId' is necessary because FlexSearch index needs an 'id'.
-const adjustedPaperData = Object.keys(paperData).map(paperId => {
-  const paper = paperData[paperId];
-  return {
-    data: [paperId, paper.title, paper.author, paper.date].join(' '),
-    paperId: paperId,
-    type: paper.type,
-    date: paper.date
-  };
-});
+const isCacheStale = () => {
+  const cacheInfo = fs.statSync('index.cache.json');
+  const ageMs = Date.now() - cacheInfo.mtimeMs;
+  const ageHours = ageMs / (1000*60*60);
+  return ageHours >= 24;
+};
 
-const index = new FlexSearch({
-  tokenize: "strict",
-  depth: 1,
-  doc: {
-    id: "paperId",
-    field: {
-      data: {},
-      paperId: {
-        tokenize: "forward"
-      },
-      type: {},
-      date: {}
+const loadCache = () => {
+  try {
+    if (isCacheStale()) {
+      return undefined;
+    } else {
+      return fs.readFileSync('index.cache.json');
     }
+  } catch (e) {
+    return undefined;
   }
-});
-index.add(adjustedPaperData);
+};
+
+const downloadIndex = async () => {
+  const response = await axios.get('http://wg21.link/index.json');
+  if (typeof response.data === 'object') {
+    return response.data;
+  } else {
+    return undefined;
+  }
+};
+
+const updateSearchIndex = () => {
+  // 1. We need to convert the JSON object into an array so that FlexSearch can
+  // swallow it.
+  // 2. Since field search in FlexSearch is sensitive to field reordering
+  // (https://github.com/nextapps-de/flexsearch/issues/70), we will merge all the
+  // data we intend to search on (paperId, title, author, date) into one string
+  // and put it at the top in the 'index' definition.
+  // 3. We still want the 'type' field because we can filter results with it.
+  // We still want the 'date' field because we sort the results with it.
+  // 'paperId' is necessary because FlexSearch index needs an 'id'.
+  const adjustedPaperData = Object.keys(paperData).map(paperId => {
+    const paper = paperData[paperId];
+    return {
+      data: [paperId, paper.title, paper.author, paper.date].join(' '),
+      paperId: paperId,
+      type: paper.type,
+      date: paper.date
+    };
+  });
+
+  searchIndex = new FlexSearch({
+    tokenize: "strict",
+    depth: 1,
+    doc: {
+      id: "paperId",
+      field: {
+        data: {},
+        paperId: {
+          tokenize: "forward"
+        },
+        type: {},
+        date: {}
+      }
+    }
+  });
+  searchIndex.add(adjustedPaperData);
+};
+
+const initializeIndex = async () => {
+  const cache = loadCache();
+  if (cache !== undefined) {
+    paperData = JSON.parse(cache);
+    updateSearchIndex();
+    console.log('Loaded index from cache successfully!');
+    return;
+  }
+
+  const index = await downloadIndex();
+  if (index !== undefined) {
+    paperData = index;
+    updateSearchIndex();
+    fs.writeFile('index.cache.json', JSON.stringify(index), () => {});
+    console.log('Downloaded index successfully!');
+    return;
+  }
+
+  console.log('Failed to initialize the index!');
+};
+
+setInterval(async () => {
+  const index = await downloadIndex();
+  if (index !== undefined) {
+    paperData = index;
+    updateSearchIndex();
+    fs.writeFile('index.cache.json', JSON.stringify(index), () => {});
+    console.log('Downloaded and updated the index successfully!');
+  }
+
+  console.log('Failed to download and update the index!');
+}, 24*60*60*1000);
 
 const latestFirst = (x, y) => {
   if (x.date === undefined) return 1;
@@ -102,12 +167,12 @@ const makePaperMessage = (paperId) => {
 const search = ({ query, type }) => {
   let searchResults = [];
   if (type === undefined) {
-    searchResults = index.search({
+    searchResults = searchIndex.search({
       query: query,
       sort: latestFirst
     });
   } else {
-    searchResults = index.search({
+    searchResults = searchIndex.search({
       query: query,
       where: { type: type },
       sort: latestFirst
@@ -232,6 +297,8 @@ app.message(/.*/, async ({ context, event, say }) => {
 });
 
 (async () => {
+  await initializeIndex();
   await app.start(process.env.PORT || 3000);
   console.log('⚡️ Paperbot is running!');
 })();
+
