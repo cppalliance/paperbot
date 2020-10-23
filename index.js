@@ -132,22 +132,13 @@ const findPaper = (paperId) => {
 };
 
 const findLatestRevision = (paperId) => {
-  let revisionFound = false;
-  let latestRevision = 0;
-  for (let revision = 0;; revision++) {
-    let revPaperId = `${paperId}R${revision}`;
-    if (paperData[revPaperId] === undefined) {
-      break;
-    } else {
-      revisionFound = true;
-      latestRevision = revision;
+  for (let revision = 15; revision >= 0; --revision) {
+    const revPaperId = `${paperId}R${revision}`;
+    if (paperData[revPaperId] !== undefined) {
+      return revPaperId;
     }
   }
-  if (revisionFound) {
-    return `${paperId}R${latestRevision}`;
-  } else {
-    return undefined;
-  }
+  return undefined;
 };
 
 const makePaperMessage = (paperId) => {
