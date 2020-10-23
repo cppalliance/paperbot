@@ -91,7 +91,9 @@ const initializeIndex = async () => {
     return;
   }
 
-  console.log('Failed to initialize the index!');
+  paperData = JSON.parse(fs.readFileSync('index.json'));
+  updateSearchIndex();
+  console.log('Loaded bundled index successfully!');
 };
 
 setInterval(async () => {
