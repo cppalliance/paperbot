@@ -228,6 +228,8 @@ app.message(/.*/, async ({ context, event, say }) => {
           text = search({ query: words.slice(2).join(' '), type: "paper" });
         } else if (words[1] === 'issues') {
           text = search({ query: words.slice(2).join(' '), type: "issue" });
+        } else if (words[1] === 'everything') {
+          text = search({ query: words.slice(2).join(' ')});
         } else {
           text = search({ query: words.slice(1).join(' ') });
         }
@@ -243,8 +245,8 @@ app.message(/.*/, async ({ context, event, say }) => {
 
       if (words[0] === 'help') {
         await say({
-          text: 'Usage: "@npaperbot search [papers|issues|everything]: <keywords>"'
-                 + ' or "@npaperbot {Nxxxx|Pxxxx|PxxxxRx|Dxxxx|DxxxxRx|CWGxxx|EWGxxx|LWGxxx|LEWGxxx|FSxxx}..."',
+          text: 'Usage: "@npaperbot search [papers|issues|everything] <keywords>"'
+                 + ' or "@npaperbot {Nxxxx|Pxxxx|PxxxxRx|Dxxxx|DxxxxRx|CWGxxx|EWGxxx|LWGxxx|LEWGxxx|FSxxx}"',
           unfurl_links: false,
           unfurl_media: false,
           thread_ts: event.thread_ts
