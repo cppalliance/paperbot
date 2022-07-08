@@ -147,12 +147,26 @@ const makePaperMessage = (paperId) => {
   const title = paper.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const author = paper.author === undefined ? '' : ` (by ${paper.author})`;
   const date = paper.date === undefined ? '' : ` (${paper.date})`;
-  const issues = paper.issues === undefined ? [] : paper.issues.map(issue => `<${paperData[issue].long_link}|${issue}>`)
+  // const issues = paper.issues === undefined ? [] : paper.issues.map(issue => `<${paperData[issue].long_link}|${issue}>`)
+  const issues = paper.issues === undefined ? [] : paper.issues.flatMap(issue =>
+  {
+    if (paperData[issue].long_link.match("issues.isocpp.org")) {
+      return [];
+    } else {
+      return `<${paperData[issue].long_link}|${issue}>`;
+    }
+  })
   if (paper.github_url !== undefined) {
     issues.push(`<${paper.github_url}|GitHub issue>`);
   }
   const allIssues = issues.length === 0 ? '' : ` (Related: ${issues.join(', ')})`;
-  return `<${paper.long_link}|${paperId}:${subgroup} ${title}>${author}${date}${allIssues}`;
+
+  // return `<${paper.long_link}|${paperId}:${subgroup} ${title}>${author}${date}${allIssues}`;
+  if (paper.long_link.match("issues.isocpp.org")) {
+    return [];
+  } else {
+    return `<${paper.long_link}|${paperId}:${subgroup} ${title}>${author}${date}${allIssues}`;
+  }
 };
 
 // We avoid passing { limit: 30 } to FlexSearch because it discards relevant results
@@ -177,9 +191,18 @@ const search = ({ query, type }) => {
   searchResults = searchResults.slice(0, 30);
   const topResults = searchResults.slice(0, 15);
   const responseText = topResults.map(result => result.paperId)
-    .map(makePaperMessage)
+    .flatMap(makePaperMessage)
+    // .join('\n') + (searchResults.length <= 15 ? ''
+    //  : ('\nAlso: ' + searchResults.slice(15).map(result => `<${paperData[result.paperId].long_link}|${result.paperId}>`).join(', ')));
     .join('\n') + (searchResults.length <= 15 ? ''
-      : ('\nAlso: ' + searchResults.slice(15).map(result => `<${paperData[result.paperId].long_link}|${result.paperId}>`).join(', ')));
+      : ('\nAlso: ' + searchResults.slice(15).flatMap(result =>
+      {
+        if (paperData[result.paperId].long_link.match("issues.isocpp.org")) {
+          return [];
+        } else {
+          return `<${paperData[result.paperId].long_link}|${result.paperId}>`;
+        }
+      }).join(', ')));
   return responseText;
 };
 
