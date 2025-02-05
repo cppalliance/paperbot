@@ -13,3 +13,8 @@ The bot needs the Slack signing secret and bot token. You can get them from the 
 
 ## Running
 Run the bot with `yarn run start` or `npm start`.
+
+## Full Server Installation
+
+Refer to https://github.com/cppalliance/ansible-paperbot  
+
